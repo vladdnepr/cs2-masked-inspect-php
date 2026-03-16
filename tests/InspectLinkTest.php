@@ -340,6 +340,45 @@ class InspectLinkTest extends TestCase
     }
 
     // -----------------------------------------------------------------------
+    // Regression: hex payload starting with 'A' (key byte = 0xAx)
+    // -----------------------------------------------------------------------
+
+    /**
+     * A masked link whose proto payload begins with hex 'A6' (XOR key = 0xA6).
+     * Previously, extractHex() wrongly treated the 'A' as the classic asset-ID
+     * prefix marker and stripped it, producing 47 hex chars (odd length) which
+     * caused hex2bin to return false / an InvalidArgumentException.
+     */
+    private const A_START_HEX = 'A6B617190F659DBE47AC86A68EA096A2CEB4D6AFBFFA9FD2';
+
+    private const A_START_URL = 'steam://run/730//+csgo_econ_action_preview%20' . self::A_START_HEX;
+
+    public function testIsMaskedReturnsTrueForAStartingPayload(): void
+    {
+        $this->assertTrue(InspectLink::isMasked(self::A_START_URL));
+    }
+
+    public function testDeserializeAStartingPayloadDoesNotThrow(): void
+    {
+        $item = InspectLink::deserialize(self::A_START_URL);
+        // Payload has XOR key 0xA6; after decryption defindex decodes to 1377.
+        $this->assertSame(1377, $item->defindex);
+    }
+
+    public function testDeserializeAStartingBareHexDoesNotThrow(): void
+    {
+        $item = InspectLink::deserialize(self::A_START_HEX);
+        $this->assertSame(1377, $item->defindex);
+    }
+
+    public function testAStartingPayloadInsideSteamRunguameUrl(): void
+    {
+        $url = 'steam://rungame/730/76561202255233023/+csgo_econ_action_preview%20' . self::A_START_HEX;
+        $item = InspectLink::deserialize($url);
+        $this->assertSame(1377, $item->defindex);
+    }
+
+    // -----------------------------------------------------------------------
     // Checksum correctness
     // -----------------------------------------------------------------------
 

@@ -109,12 +109,16 @@ final class InspectLink
             return $m[1];
         }
 
-        // Classic/market URL: A<hex> preceded by %20, space, or + (A is a prefix marker, not hex)
-        if (preg_match('/(?:%20|\s|\+)A([0-9A-Fa-f]+)/i', $stripped, $m)) {
+        // Classic/market URL: A<hex> preceded by %20, space, or + (A is a prefix marker, not hex).
+        // If stripping A yields odd-length hex, A is actually the first byte of the payload —
+        // fall through to the pure-masked check below which captures it with A included.
+        if (preg_match('/(?:%20|\s|\+)A([0-9A-Fa-f]+)/i', $stripped, $m)
+            && 0 === strlen($m[1]) % 2) {
             return $m[1];
         }
 
-        // Pure masked format: csgo_econ_action_preview%20<hexblob> (no S/A/M prefix)
+        // Pure masked format: csgo_econ_action_preview%20<hexblob> (no S/A/M prefix).
+        // Also handles payloads whose first hex character happens to be A.
         if (preg_match('/csgo_econ_action_preview(?:%20|\s|\+)([0-9A-Fa-f]{10,})$/i', $stripped, $m)) {
             return $m[1];
         }
