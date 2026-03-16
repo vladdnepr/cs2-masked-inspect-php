@@ -344,38 +344,54 @@ class InspectLinkTest extends TestCase
     // -----------------------------------------------------------------------
 
     /**
-     * A masked link whose proto payload begins with hex 'A6' (XOR key = 0xA6).
+     * Three real-world masked links whose first hex digit is 'A' (XOR key = 0xA4 or 0xA6).
      * Previously, extractHex() wrongly treated the 'A' as the classic asset-ID
-     * prefix marker and stripped it, producing 47 hex chars (odd length) which
+     * prefix marker and stripped it, producing an odd-length hex string which
      * caused hex2bin to return false / an InvalidArgumentException.
+     *
+     *   A_START_HEX_1  key=0xA6, longer payload  → defindex=34  (M4A1-S)
+     *   A_START_HEX_2  key=0xA4, shorter payload → defindex=4676
+     *   A_START_HEX_3  key=0xA6, shorter payload → defindex=1377
      */
-    private const A_START_HEX = 'A6B617190F659DBE47AC86A68EA096A2CEB4D6AFBFFA9FD2';
+    private const A_START_HEX_1 = 'A6B6710C51510DA7BE848628A18EA396A29E1C181D56A5E682CEE8D6AEE7BC380F';
+    private const A_START_HEX_2 = 'A4B4725C7B1EE6BC608084A48CA294A0CC9CD4AD3EDF347E';
+    private const A_START_HEX_3 = 'A6B617190F659DBE47AC86A68EA096A2CEB4D6AFBFFA9FD2';
 
-    private const A_START_URL = 'steam://run/730//+csgo_econ_action_preview%20' . self::A_START_HEX;
-
-    public function testIsMaskedReturnsTrueForAStartingPayload(): void
+    /** @return array<string, array{string, int}> */
+    public static function aStartingPayloadProvider(): array
     {
-        $this->assertTrue(InspectLink::isMasked(self::A_START_URL));
+        return [
+            'key=0xA6 long'  => [self::A_START_HEX_1, 34],
+            'key=0xA4 short' => [self::A_START_HEX_2, 4676],
+            'key=0xA6 short' => [self::A_START_HEX_3, 1377],
+        ];
     }
 
-    public function testDeserializeAStartingPayloadDoesNotThrow(): void
+    #[\PHPUnit\Framework\Attributes\DataProvider('aStartingPayloadProvider')]
+    public function testIsMaskedReturnsTrueForAStartingPayload(string $hex, int $_defindex): void
     {
-        $item = InspectLink::deserialize(self::A_START_URL);
-        // Payload has XOR key 0xA6; after decryption defindex decodes to 1377.
-        $this->assertSame(1377, $item->defindex);
+        $url = 'steam://run/730//+csgo_econ_action_preview%20' . $hex;
+        $this->assertTrue(InspectLink::isMasked($url));
     }
 
-    public function testDeserializeAStartingBareHexDoesNotThrow(): void
+    #[\PHPUnit\Framework\Attributes\DataProvider('aStartingPayloadProvider')]
+    public function testDeserializeAStartingBareHex(string $hex, int $defindex): void
     {
-        $item = InspectLink::deserialize(self::A_START_HEX);
-        $this->assertSame(1377, $item->defindex);
+        $this->assertSame($defindex, InspectLink::deserialize($hex)->defindex);
     }
 
-    public function testAStartingPayloadInsideSteamRunguameUrl(): void
+    #[\PHPUnit\Framework\Attributes\DataProvider('aStartingPayloadProvider')]
+    public function testDeserializeAStartingSteamRunUrl(string $hex, int $defindex): void
     {
-        $url = 'steam://rungame/730/76561202255233023/+csgo_econ_action_preview%20' . self::A_START_HEX;
-        $item = InspectLink::deserialize($url);
-        $this->assertSame(1377, $item->defindex);
+        $url = 'steam://run/730//+csgo_econ_action_preview%20' . $hex;
+        $this->assertSame($defindex, InspectLink::deserialize($url)->defindex);
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('aStartingPayloadProvider')]
+    public function testDeserializeAStartingSteamRungameUrl(string $hex, int $defindex): void
+    {
+        $url = 'steam://rungame/730/76561202255233023/+csgo_econ_action_preview%20' . $hex;
+        $this->assertSame($defindex, InspectLink::deserialize($url)->defindex);
     }
 
     // -----------------------------------------------------------------------
