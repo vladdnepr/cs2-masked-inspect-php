@@ -1,0 +1,36 @@
+{
+    "name": "vlydev/cs2-masked-inspect",
+    "description": "Encode and decode CS2 masked inspect links",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "VlyDev",
+            "email": "vladdnepr1989@gmail.com",
+            "homepage": "https://github.com/vlydev"
+        }
+    ],
+    "keywords": ["cs2", "csgo", "inspect", "protobuf", "steam"],
+    "require": {
+        "php": ">=8.2"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.5 || ^11.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "VlyDev\\Steam\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "VlyDev\\Steam\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit tests/"
+    },
+    "config": {
+        "sort-packages": true
+    }
+}
