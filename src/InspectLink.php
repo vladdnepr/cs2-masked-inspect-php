@@ -109,8 +109,13 @@ final class InspectLink
             return $m[1];
         }
 
-        // Match A<hex> preceded by a space (%20, literal space, or +) in a steam:// / csgo:// URL
+        // Classic/market URL: A<hex> preceded by %20, space, or + (A is a prefix marker, not hex)
         if (preg_match('/(?:%20|\s|\+)A([0-9A-Fa-f]+)/i', $stripped, $m)) {
+            return $m[1];
+        }
+
+        // Pure masked format: csgo_econ_action_preview%20<hexblob> (no S/A/M prefix)
+        if (preg_match('/csgo_econ_action_preview(?:%20|\s|\+)([0-9A-Fa-f]{10,})$/i', $stripped, $m)) {
             return $m[1];
         }
 
