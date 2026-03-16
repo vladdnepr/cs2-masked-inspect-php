@@ -32,6 +32,17 @@ final class InspectLink
      */
     public static function serialize(ItemPreviewData $data): string
     {
+        if ($data->paintwear < 0.0 || $data->paintwear > 1.0) {
+            throw new \InvalidArgumentException(
+                sprintf('paintwear must be in [0.0, 1.0], got %f', $data->paintwear),
+            );
+        }
+        if ($data->customname !== null && strlen($data->customname) > 100) {
+            throw new \InvalidArgumentException(
+                sprintf('customname must not exceed 100 characters, got %d', strlen($data->customname)),
+            );
+        }
+
         $protoBytes = self::encodeItem($data);
         $buffer = "\x00" . $protoBytes;
         $checksum = self::computeChecksum($buffer, strlen($protoBytes));
@@ -52,6 +63,13 @@ final class InspectLink
     public static function deserialize(string $hexOrUrl): ItemPreviewData
     {
         $hex = self::extractHex($hexOrUrl);
+
+        if (strlen($hex) > 4096) {
+            throw new \InvalidArgumentException(
+                sprintf('Payload too long (max 4096 hex chars): "%s"', substr($hexOrUrl, 0, 64) . '...'),
+            );
+        }
+
         $raw = hex2bin($hex);
 
         if ($raw === false || strlen($raw) < 6) {

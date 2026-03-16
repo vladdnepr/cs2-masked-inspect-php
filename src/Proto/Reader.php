@@ -115,8 +115,13 @@ final class Reader
     public function readAllFields(): array
     {
         $fields = [];
+        $fieldCount = 0;
 
         while ($this->remaining() > 0) {
+            if (++$fieldCount > 100) {
+                throw new \OverflowException('Protobuf field count exceeds limit of 100');
+            }
+
             [$fieldNum, $wireType] = $this->readTag();
 
             $value = match ($wireType) {

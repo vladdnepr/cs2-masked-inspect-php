@@ -409,4 +409,46 @@ class InspectLinkTest extends TestCase
         );
         $this->assertSame(self::TOOL_HEX, InspectLink::serialize($data));
     }
+
+    // -----------------------------------------------------------------------
+    // Validation: payload length, proto field count, value ranges
+    // -----------------------------------------------------------------------
+
+    public function testDeserializePayloadTooLong(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        InspectLink::deserialize(str_repeat('AB', 2049)); // 4098 chars > 4096
+    }
+
+    public function testSerializePaintwearAboveOne(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        InspectLink::serialize(new ItemPreviewData(paintwear: 1.5));
+    }
+
+    public function testSerializePaintwearBelowZero(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        InspectLink::serialize(new ItemPreviewData(paintwear: -0.1));
+    }
+
+    public function testSerializePaintwearBoundaryValid(): void
+    {
+        // 0.0 and 1.0 are valid wear values
+        $this->assertStringStartsWith('00', InspectLink::serialize(new ItemPreviewData(paintwear: 0.0)));
+        $this->assertStringStartsWith('00', InspectLink::serialize(new ItemPreviewData(paintwear: 1.0)));
+    }
+
+    public function testSerializeCustomnameTooLong(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        InspectLink::serialize(new ItemPreviewData(customname: str_repeat('A', 101)));
+    }
+
+    public function testSerializeCustomnameMaxLength(): void
+    {
+        // exactly 100 chars is allowed
+        $result = InspectLink::serialize(new ItemPreviewData(customname: str_repeat('A', 100)));
+        $this->assertStringStartsWith('00', $result);
+    }
 }
