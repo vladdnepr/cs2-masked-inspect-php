@@ -77,6 +77,80 @@ $decoded = InspectLink::deserialize($hex); // round-trip
 
 ---
 
+## Gen codes
+
+Gen codes are space-separated command strings used on CS2 community servers to spawn items.
+
+Format:
+```
+!gen {defindex} {paintindex} {paintseed} {paintwear} [{s0_id} {s0_wear} ... {s4_id} {s4_wear}] [{kc_id} {kc_wear} ...]
+```
+
+- Stickers are always represented as 5 slot pairs (padded with `0 0` for empty slots)
+- Keychains are appended without padding, only for present slots
+- Float values have trailing zeros stripped (max 8 decimal places); `0.0` becomes `"0"`
+
+### Generate a Steam inspect URL from parameters
+
+```php
+use VlyDev\Steam\GenCode;
+
+$url = GenCode::generate(
+    defIndex:  7,
+    paintIndex: 474,
+    paintSeed:  306,
+    paintWear:  0.22540508,
+    rarity:     6,
+);
+// steam://rungame/730/76561202255233023/+csgo_econ_action_preview%200018...
+```
+
+### Convert an ItemPreviewData to a gen code
+
+```php
+use VlyDev\Steam\GenCode;
+use VlyDev\Steam\ItemPreviewData;
+use VlyDev\Steam\Sticker;
+
+$item = new ItemPreviewData(
+    defindex:   7,
+    paintindex: 474,
+    paintseed:  306,
+    paintwear:  0.22540508,
+    stickers: [
+        new Sticker(slot: 2, stickerId: 7203),
+    ],
+);
+
+$code = GenCode::toGenCode($item);
+// "!gen 7 474 306 0.22540508 0 0 0 0 7203 0 0 0 0 0"
+
+$code = GenCode::toGenCode($item, '!g'); // custom prefix
+```
+
+### Parse a gen code string
+
+```php
+use VlyDev\Steam\GenCode;
+
+$item = GenCode::parseGenCode('!gen 7 474 306 0.22540508 0 0 0 0 7203 0 0 0 0 0');
+echo $item->defindex;    // 7
+echo $item->paintindex;  // 474
+echo $item->paintseed;   // 306
+echo $item->paintwear;   // 0.22540508
+
+$item2 = GenCode::parseGenCode('7 474 306 0.22540508'); // prefix is optional
+```
+
+### Convert an existing inspect link directly to a gen code
+
+```php
+$code = GenCode::genCodeFromLink('steam://rungame/730/76561202255233023/+csgo_econ_action_preview%20001A...');
+// "!gen 7 474 306 0.22540508"
+```
+
+---
+
 ## Validation
 
 Use `isMasked()` and `isClassic()` to detect the link type without attempting to decode it.
