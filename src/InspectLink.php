@@ -102,7 +102,7 @@ final class InspectLink
     public static function isMasked(string $link): bool
     {
         // Pure hex blob (new steam://run/730// format)
-        if (preg_match('/csgo_econ_action_preview(?:%20|\s)[0-9A-Fa-f]{10,}$/i', $link)) {
+        if (preg_match('/csgo_econ_action_preview(?:%20|\s)%?[0-9A-Fa-f]{10,}$/i', $link)) {
             return true;
         }
         // Hybrid: S/A/D prefix with hex proto after D
@@ -137,7 +137,7 @@ final class InspectLink
 
         // Pure masked format: csgo_econ_action_preview%20<hexblob> (no S/A/M prefix).
         // Also handles payloads whose first hex character happens to be A.
-        if (preg_match('/csgo_econ_action_preview(?:%20|\s|\+)([0-9A-Fa-f]{10,})$/i', $stripped, $m)) {
+        if (preg_match('/csgo_econ_action_preview(?:%20|\s|\+)%?([0-9A-Fa-f]{10,})$/i', $stripped, $m)) {
             return $m[1];
         }
 
